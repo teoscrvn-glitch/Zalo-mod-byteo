@@ -1,0 +1,11 @@
+[versions]
+agp = "9.4.1"
+dexkit = "2.3.0"
+smaliDexlib2 = "3.0.10"
+
+[libraries]
+dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
+smali-dexlib2 = { module = "com.android.tools.smali:smali-dexlib2", version.ref = "smaliDexlib2" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }

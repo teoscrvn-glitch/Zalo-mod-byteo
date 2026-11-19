@@ -1,0 +1,78 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('local.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def getGitCommitCount = { ->
+    def propertyValue = project.findProperty("versionCode")
+    if (propertyValue != null) {
+        return propertyValue.toString().toInteger()
+    }
+    if (!rootProject.file('.git').exists()) {
+        return 1
+    }
+
+    try {
+        return providers.exec {
+            commandLine 'git', 'rev-list', '--count', 'HEAD'
+        }.standardOutput.asText.get().trim().toInteger()
+    } catch (Exception ignored) {
+        return 1
+    }
+}
+
+android {
+    namespace 'io.github.electroheavenvn.zaloxposed'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "io.github.electroheavenvn.zaloxposed"
+        minSdk 26
+        targetSdk 36
+        versionCode getGitCommitCount()
+        versionName project.findProperty("versionName") ?: "1.0"
+    }
+
+    signingConfigs {
+        release {
+            if (keystoreProperties['signing.storeFile'] != null) {
+                storeFile = file(keystoreProperties['signing.storeFile'])
+                storePassword = keystoreProperties['signing.storePassword']
+                keyAlias = keystoreProperties['signing.keyAlias']
+                keyPassword = keystoreProperties['signing.keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (keystoreProperties['signing.storeFile'] != null) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ["$rootDir/ZaloXposedNative/Output"]
+        }
+    }
+}
+
+dependencies {
+    implementation libs.dexkit
+    implementation libs.smali.dexlib2
+    compileOnly("io.github.libxposed:api:102.0.0")
+}
